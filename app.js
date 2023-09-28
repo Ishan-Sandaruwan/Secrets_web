@@ -4,6 +4,8 @@ const bodyParser = require("body-parser");
 const ejs = require("ejs");
 const mongoose = require("mongoose");
 const md5 = require("md5");
+const bcrypt = require('bcrypt');
+const saltRounds = 10;
 
 mongoose
 .connect("mongodb://127.0.0.1:27017/authentication1", {
@@ -51,31 +53,35 @@ app.get("/register",(req,res)=>{
 });
 
 app.post("/register",(req,res)=>{
-    const newUser = new User({
-        email : req.body.username,
-        password : md5(req.body.password)
+    bcrypt.hash(req.body.password, saltRounds, function(err, hash) {
+        const newUser = new User({
+            email : req.body.username,
+            password : hash
+        });
+        newUser.save().then((rs)=>{
+            if(rs){
+                res.render("secrets");
+            }else{
+                console.log("not inserted data soething went wrong ");
+            }
+        }).catch((err)=>{
+            console.log(" db error : "+err);
+        });
     });
-    newUser.save().then((rs)=>{
-        if(rs){
-            res.render("secrets");
-        }else{
-            console.log("not inserted data soething went wrong ");
-        }
-    }).catch((err)=>{
-        console.log(" db error : "+err);
-    })
 });
 
 app.post("/login",async (req,res)=>{
     const username=req.body.username;
-    const password=md5(req.body.password);
+    const password=req.body.password;
     const user = await User.findOne({ email: username }).exec();
     if(user){
-        if(password === user.password){
-            res.render("secrets");
-        }else{
-            res.redirect("/login");
-        }
+        bcrypt.compare(password, user.password, function(err, result) {
+            if(result){
+                res.render("secrets");
+            }else{
+                res.redirect("/login");
+            }
+        });
     }else{
         res.redirect("/login");
     }
