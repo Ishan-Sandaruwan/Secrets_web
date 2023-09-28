@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require("express");
 const bodyParser = require("body-parser");
 const ejs = require("ejs");
@@ -5,16 +6,16 @@ const mongoose = require("mongoose");
 const encrypt = require("mongoose-encryption");
 
 mongoose
-  .connect("mongodb://127.0.0.1:27017/authentication1", {
+.connect("mongodb://127.0.0.1:27017/authentication1", {
     useNewUrlParser: true,
     useUnifiedTopology: true,
-  })
-  .then(() => {
+})
+.then(() => {
     console.log("Connected to MongoDB");
-  })
-  .catch((err) => {
+})
+.catch((err) => {
     console.error("Error connecting to MongoDB:", err);
-  });
+});
 
 const userShema = new mongoose.Schema({
     email : {
@@ -28,8 +29,7 @@ const userShema = new mongoose.Schema({
     }
 });
 
-const secret = "Thisis ourlittlesecret.";
-userShema.plugin(encrypt,{secret : secret , encryptedFields : ["password"]});
+userShema.plugin(encrypt,{secret : process.env.SECRET , encryptedFields : ["password"]});
 
 const User = mongoose.model("User", userShema);
 
