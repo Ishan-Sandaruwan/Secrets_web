@@ -3,7 +3,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const ejs = require("ejs");
 const mongoose = require("mongoose");
-const encrypt = require("mongoose-encryption");
+const md5 = require("md5");
 
 mongoose
 .connect("mongodb://127.0.0.1:27017/authentication1", {
@@ -29,8 +29,6 @@ const userShema = new mongoose.Schema({
     }
 });
 
-userShema.plugin(encrypt,{secret : process.env.SECRET , encryptedFields : ["password"]});
-
 const User = mongoose.model("User", userShema);
 
 
@@ -55,7 +53,7 @@ app.get("/register",(req,res)=>{
 app.post("/register",(req,res)=>{
     const newUser = new User({
         email : req.body.username,
-        password : req.body.password
+        password : md5(req.body.password)
     });
     newUser.save().then((rs)=>{
         if(rs){
@@ -70,7 +68,7 @@ app.post("/register",(req,res)=>{
 
 app.post("/login",async (req,res)=>{
     const username=req.body.username;
-    const password=req.body.password;
+    const password=md5(req.body.password);
     const user = await User.findOne({ email: username }).exec();
     if(user){
         if(password === user.password){
@@ -81,25 +79,6 @@ app.post("/login",async (req,res)=>{
     }else{
         res.redirect("/login");
     }
-    // User.findOne({ email: username })
-    // .then(user => {
-    //     if (user) {
-    //         if(password === user.password){
-    //             res.render("secrets");
-    //         }else{
-    //             res.redirect("/login");
-    //         }
-    //     } else {
-    //         console.log("User not found.");
-    //         res.redirect("/login");
-    //     }
-    // })
-    // .catch(err => {
-    //     console.error(err);
-    //     res.redirect("/login");
-    // });
-
-    
 });
 
 app.listen(3000,()=>{
